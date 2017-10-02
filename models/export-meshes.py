@@ -12,15 +12,18 @@ import sys
 import bpy
 import struct
 
-bpy.ops.wm.open_mainfile(filepath='island.blend')
+bpy.ops.wm.open_mainfile(filepath='cube_volleyball.blend')
 
 #names of objects whose meshes to write (not actually the names of the meshes):
 to_write = [
-	'House',
-	'Land',
-	'Tree',
-	'Water',
-	'Rock',
+	'Cube',
+	'Cube.001',
+	'Cube.002',
+	'Cube.003',
+	'Cube.004',
+        'Cube.005',
+        'Plane',
+        'Sphere',
 ]
 
 #data contains vertex and normal data from the meshes:
@@ -105,7 +108,7 @@ print("Wrote " + str(blob.tell()) + " bytes to meshes.blob")
 #Export scene (object positions for every object on layer one)
 
 #(re-open file because we adjusted mesh users in the export above)
-bpy.ops.wm.open_mainfile(filepath='island.blend')
+bpy.ops.wm.open_mainfile(filepath='cube_volleyball.blend')
 
 #strings chunk will have names
 strings = b''
@@ -122,6 +125,9 @@ for name in to_write:
 scene = b''
 for obj in bpy.data.objects:
 	if obj.layers[0] == False: continue
+	if obj.data.name == 'Sphere': continue
+	if obj.data.name == 'Cube': continue
+	if obj.data.name == 'Cube.001': continue
 	if not obj.data.name in name_begin:
 		print("WARNING: not writing object '" + obj.name + "' because mesh not written.")
 		continue

@@ -21,7 +21,7 @@ int main(int argc, char **argv) {
 	//Configuration:
 	struct {
 		std::string title = "Game2: Scene";
-		glm::uvec2 size = glm::uvec2(640, 480);
+		glm::uvec2 size = glm::uvec2(800, 600);
 	} config;
 
 	//------------  initialization ------------
@@ -204,6 +204,7 @@ int main(int argc, char **argv) {
 		}
 	}
 
+  /*
 	//create a weird waving tree stack:
 	std::vector< Scene::Object * > tree_stack;
 	tree_stack.emplace_back( &add_object("Tree", glm::vec3(1.0f, 0.0f, 0.2f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(0.3f)) );
@@ -216,14 +217,14 @@ int main(int argc, char **argv) {
 	}
 
 	std::vector< float > wave_acc(tree_stack.size(), 0.0f);
-
+*/
 	glm::vec2 mouse = glm::vec2(0.0f, 0.0f); //mouse position in [-1,1]x[-1,1] coordinates
 
 	struct {
-		float radius = 5.0f;
-		float elevation = 0.0f;
-		float azimuth = 0.0f;
-		glm::vec3 target = glm::vec3(0.0f, 0.0f, 0.0f);
+		float radius = 15.0f;
+		float elevation = -6.0f;
+		float azimuth = 3.12f;
+		glm::vec3 target = glm::vec3(0.0f, -2.0f, 0.0f);
 	} camera;
 
 	//------------ game loop ------------
@@ -254,9 +255,12 @@ int main(int argc, char **argv) {
 		auto current_time = std::chrono::high_resolution_clock::now();
 		static auto previous_time = current_time;
 		float elapsed = std::chrono::duration< float >(current_time - previous_time).count();
+    (void) elapsed;
 		previous_time = current_time;
 
 		{ //update game state:
+
+      /*
 			//tree stack:
 			for (uint32_t i = 0; i < tree_stack.size(); ++i) {
 				wave_acc[i] += elapsed * (0.3f + 0.3f * i);
@@ -267,7 +271,7 @@ int main(int argc, char **argv) {
 					glm::vec3(std::cos(ang), std::sin(ang), 0.0f)
 				);
 			}
-
+*/
 			//camera:
 			scene.camera.transform.position = camera.radius * glm::vec3(
 				std::cos(camera.elevation) * std::cos(camera.azimuth),
