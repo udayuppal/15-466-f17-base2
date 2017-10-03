@@ -4,7 +4,7 @@ NOTE: please fill in the first section with information about your game.
 
 *Cube Volleyball* is *Uday Uppal*'s implementation of [*Cube Volleyball*](http://graphics.cs.cmu.edu/courses/15-466-f17/game3-designs/rmukunda/) for game3 in 15-466-f17.
 
-![Image](screenshots/screenshot.png?raw=true "Image")
+![Image](screenshots/Screenshot.png?raw=true "Image")
 
 ## Asset Pipeline
 
