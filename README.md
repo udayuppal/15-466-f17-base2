@@ -1,29 +1,25 @@
 NOTE: please fill in the first section with information about your game.
 
-# *Game Title*
+# *Cube Volleyball*
 
-*Game Title* is *Your Name*'s implementation of [*Design Document*](http://graphics.cs.cmu.edu/courses/15-466-f17/game2-designs/put-real-link-here) for game2 in 15-466-f17.
+*Cube Volleyball* is *Uday Uppal*'s implementation of [*Cube Volleyball*](http://graphics.cs.cmu.edu/courses/15-466-f17/game3-designs/rmukunda/) for game3 in 15-466-f17.
 
-*Include a Screenshot Here*
-
-## Build Notes
-
-*Include any special notes or steps required to build your game here. If there are no special notes, delete this section.*
+![Image](screenshots/screenshot.png?raw=true "Image")
 
 ## Asset Pipeline
 
-*Briefly describe the asset pipeline for this game. What sorts of source files are used? How are they processed? How are they loaded?*
+The asset pipeline consists of a blender file called cube_volleyball.blend and an export-meshes.py script used to export information from the blender file into usable scene and mesh objects. These objects can then be created and controlled through their transformations in game.
 
 ## Architecture
 
-*Provide a brief introduction to how you implemented the design. Talk about the basic structure of your code.*
+The architecture is based on the base2 code. Scene objects are created to represent the two players and the ball, and these are updated based on key events. Each has a position and velocity that is changed constantly based on collisions and acceleration. 
+In the game state update section, collisions are detected to change the velocities and positons if necessary, then new positions are calculated using the new velocities. At the end of each loop, the game state is checked again to see if a new round should be started.
 
 ## Reflection
 
-*Reflect on the assignment. What was difficult? What worked well? If you were doing it again, what would you change?*
+Originally, getting the collisions to work correctly was fairly difficult. I kept miscomputing the collision areas and velocity recomputations. Edge cases were also difficult to fix sometimes since collisions could lead to objects getting "stuck" inside each other. If I were doing this again, I would focus on writing cleaner collision code by using better variables. The game logic however worked well, and score tracking and movement never gave me any issues.
 
-*Reflect on the design document. What was clear and what was ambiguous? How did you resolve the ambiguities?*
-
+The design document was fairly open to interpretation and customization. It made the objective of the game, the game over state, and the controls clear. However, it was unclear what counts as a bounce in the game, and how the physics of the system should work. For example, it did not clarify if the players should only change the direction of the ball's velocity, or also the speed and acceleration. To resolve these ambiguities, I made it so that the ball starts with an initial velocity towards the side player that lost the previous point (or the left player for round 1). Then, the players can only influence the direction of the ball by bouncing it perpendicular to the cube faces, without changing the speed. Also, I decided that bounces off the players as well as the floor would count as "true bounces" towards the 4 bounce limit, but bounces off the side walls would not. I felt that these decisions would make the gameplay most intuitive.
 
 # About Base2
 
