@@ -1,5 +1,3 @@
-NOTE: please fill in the first section with information about your game.
-
 # *Cube Volleyball*
 
 *Cube Volleyball* is *Uday Uppal*'s implementation of [*Cube Volleyball*](http://graphics.cs.cmu.edu/courses/15-466-f17/game3-designs/rmukunda/) for game3 in 15-466-f17.
@@ -13,7 +11,7 @@ The asset pipeline consists of a blender file called cube_volleyball.blend and a
 ## Architecture
 
 The architecture is based on the base2 code. Scene objects are created to represent the two players and the ball, and these are updated based on key events. Each has a position and velocity that is changed constantly based on collisions and acceleration. 
-In the game state update section, collisions are detected to change the velocities and positons if necessary, then new positions are calculated using the new velocities. At the end of each loop, the game state is checked again to see if a new round should be started.
+In the game state update section, collisions are detected to change the velocities and positions if necessary, then new positions are calculated using the new velocities. At the end of each loop, the game state is checked again to see if a new round should be started.
 
 ## Reflection
 
