@@ -174,7 +174,6 @@ int main(int argc, char **argv) {
 		return object;
 	};
 
-
 	{ //read objects to add from "scene.blob":
 		std::ifstream file("scene.blob", std::ios::binary);
 
@@ -207,11 +206,11 @@ int main(int argc, char **argv) {
 	//create players and ball:
   Scene::Object *player1 = &add_object("Cube", glm::vec3(0.0f, 3.0f, 0.6f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(0.6f));
   Scene::Object *player2 = &add_object("Cube.001", glm::vec3(0.0f, -6.0f, 0.6f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(0.6f));
-  Scene::Object *ball = &add_object("Sphere", glm::vec3(0.0f, 3.0f, 4.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(0.4f));
+  Scene::Object *ball = &add_object("Sphere", glm::vec3(0.0f, -1.7f, 5.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(0.4f));
 
   glm::vec3 player1_velocity = glm::vec3(0.0f, 0.0f, 0.0f);
   glm::vec3 player2_velocity = glm::vec3(0.0f, 0.0f, 0.0f);
-  glm::vec3 ball_velocity = glm::vec3(0.0f, 3.0f, 0.0f);
+  glm::vec3 ball_velocity = glm::vec3(0.0f, 5.0f, 0.0f);
 
   //create camera
 	struct {
@@ -239,8 +238,25 @@ int main(int argc, char **argv) {
 	//------------ game loop ------------
 
 	bool should_quit = false;
-  float ball_gravity = -2.0f;
-  float player_gravity = -1.5f;
+  bool game_over = false;
+  bool new_level = true;
+
+  float ball_gravity = -3.0f;
+  float player_gravity = -2.5f;
+
+  bool player1_left = false;
+  bool player1_right = false;
+  bool player1_jump = false;
+
+  bool player2_left = false;
+  bool player2_right = false;
+  bool player2_jump = false;
+
+  bool player1_getting_point = false;
+  int num_bounces = 0;
+  int player1_score = 0;
+  int player2_score = 0;
+  
 	while (true) {
 		static SDL_Event evt;
 		while (SDL_PollEvent(&evt) == 1) {
@@ -250,7 +266,47 @@ int main(int argc, char **argv) {
 			} else if (evt.type == SDL_QUIT) {
 				should_quit = true;
 				break;
-			}
+			} else if (evt.type == SDL_MOUSEBUTTONDOWN) {
+        if (game_over) {
+          should_quit = true;
+        } else {
+          new_level = false;
+        }
+      } else if (evt.type == SDL_KEYDOWN || evt.type == SDL_KEYUP) {
+        if (!new_level) {
+          if (evt.key.keysym.sym == SDLK_w) {
+            if (!player1_jump && evt.key.state == SDL_PRESSED) {
+              player1_jump = true;
+              player1_velocity.z = 2.5f;
+            }
+          } else if (evt.key.keysym.sym == SDLK_a) {
+            player1_left = (evt.key.state == SDL_PRESSED);
+            if (player1_left) {
+              player1_right = false;
+            }
+          } else if (evt.key.keysym.sym == SDLK_d) {
+            player1_right = (evt.key.state == SDL_PRESSED);
+            if (player1_right) {
+              player1_left = false;
+            }
+          } else if (evt.key.keysym.sym == SDLK_UP) {
+            if (!player2_jump && evt.key.state == SDL_PRESSED) {
+              player2_jump = true;
+              player2_velocity.z = 2.5f;
+            }
+          } else if (evt.key.keysym.sym == SDLK_LEFT) {
+            player2_left = (evt.key.state == SDL_PRESSED);
+            if (player2_right) {
+              player2_left = false;
+            }
+          } else if (evt.key.keysym.sym == SDLK_RIGHT) {
+            player2_right = (evt.key.state == SDL_PRESSED);
+            if (player2_right) {
+              player2_left = false;
+            }
+          }
+        }
+      }
 		}
 		if (should_quit) break;
 
@@ -260,45 +316,81 @@ int main(int argc, char **argv) {
     (void) elapsed;
 		previous_time = current_time;
 
-		{ //update game state:
+		//update game state:
+    if (!new_level) {
 
 			//player1
       if (player1->transform.position.z > 0.6f) {
         player1_velocity.z += player_gravity * elapsed;
       } else {
         if (player1_velocity.z < 0.0f) {
-          player1_velocity.z *= -1.0f;
+          player1_velocity.z = 0.0f;
+          player1_jump = false;
         }
       }
-      
+     
+      if (player1_left) {
+        player1_velocity.y = 4.0f;
+      } else if (player1_right) {
+        player1_velocity.y = -4.0f;
+      } else {
+        player1_velocity.y = 0.0f;
+      }
+
       player1->transform.position.y += player1_velocity.y * elapsed;
       player1->transform.position.z += player1_velocity.z * elapsed;
+      if (player1->transform.position.y <= -0.4f) {
+        player1->transform.position.y = -0.4f;
+      }
+      if (player1->transform.position.y >= 7.7f) {
+        player1->transform.position.y = 7.7f;
+      }
       
 			//player2
       if (player2->transform.position.z > 0.6f) {
         player2_velocity.z += player_gravity * elapsed;
       } else {
         if (player2_velocity.z < 0.0f) {
-          player2_velocity.z *= -1.0f;
+          player2_velocity.z = 0.0f;
+          player2_jump = false;
         }
+      }
+      
+      if (player2_left) {
+        player2_velocity.y = 4.0f;
+      } else if (player2_right) {
+        player2_velocity.y = -4.0f;
+      } else {
+        player2_velocity.y = 0.0f;
       }
       
       player2->transform.position.y += player2_velocity.y * elapsed;
       player2->transform.position.z += player2_velocity.z * elapsed;
+      if (player2->transform.position.y >= -3.0f) {
+        player2->transform.position.y = -3.0f;
+      }
+      if (player2->transform.position.y <= -11.0f) {
+        player2->transform.position.y = -11.0f;
+      }
       
-			//ball-wall collisions
+			//ball
+      if (ball->transform.position.z >= 5.0f) {
+        ball_velocity.z = 0.0f;
+        ball->transform.position.z = 5.0f;
+      }  
       if (ball->transform.position.z >= 0.4f) {
         ball_velocity.z += ball_gravity * elapsed;
       } else {
+        num_bounces++;
         ball_velocity.z *= -1.0f;
         ball->transform.position.z = 0.4f;
       }
      
+			//ball-wall collisions
       if (ball->transform.position.y >= 8.1f) {
         ball_velocity.y *= -1.0f;
         ball->transform.position.y = 8.1f;
-      }
-      
+      }    
       if (ball->transform.position.y <= -11.4f) {
         ball_velocity.y *= -1.0f;
         ball->transform.position.y = -11.4f;
@@ -316,6 +408,7 @@ int main(int argc, char **argv) {
 
       if (-1.0f < center_difference1.y && center_difference1.y < 1.0f &&
           -1.0f < center_difference1.z && center_difference1.z < 1.0f) {
+        num_bounces++;
         if (center_difference1.y <= 0.0f &&
             center_difference1.z <= -center_difference1.y &&
             center_difference1.z >= center_difference1.y) {
@@ -345,6 +438,7 @@ int main(int argc, char **argv) {
         
       if (-1.0f < center_difference2.y && center_difference2.y < 1.0f &&
           -1.0f < center_difference2.z && center_difference2.z < 1.0f) {
+        num_bounces++;
         if (center_difference2.y <= 0.0f &&
             center_difference2.z <= -center_difference2.y &&
             center_difference2.z >= center_difference2.y) {
@@ -372,9 +466,59 @@ int main(int argc, char **argv) {
         }
       }
 
-      ball->transform.position.y += ball_velocity.y * elapsed;
-      ball->transform.position.z += ball_velocity.z * elapsed;
+      //ball-net collisions
+      if (ball->transform.position.z <= 3.2f &&
+          ball->transform.position.y <= -1.3f &&
+          ball->transform.position.y >= -2.1f) {
+        num_bounces = 5;
+      }
       
+      if (num_bounces >= 5) {
+        new_level = true;
+        num_bounces = 0;
+        ball->transform.position = glm::vec3(0.0f, -1.7f, 5.0f);
+        player1->transform.position = glm::vec3(0.0f, 3.0f, 0.6f);
+        player2->transform.position = glm::vec3(0.0f, -6.0f, 0.6f);
+        player1_velocity = glm::vec3(0.0f, 0.0f, 0.0f);
+        player2_velocity = glm::vec3(0.0f, 0.0f, 0.0f);
+
+        player1_left = false;
+        player1_right = false;
+        player1_jump = false;
+
+        player2_left = false;
+        player2_right = false;
+        player2_jump = false;
+
+        if (player1_getting_point) {
+          player1_score++;
+          ball_velocity = glm::vec3(0.0f, -5.0f, 0.0f);
+          add_object("Sphere", glm::vec3(0.0f, 8.0 - ((float)player1_score) * 0.5f, 7.5f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(0.1f));
+          if (player1_score == 10) {
+            game_over = true;
+            player1->transform.position.z = 5.0f;
+          }
+
+        } else {
+          player2_score++;
+          ball_velocity = glm::vec3(0.0f, 5.0f, 0.0f);
+          add_object("Sphere", glm::vec3(0.0f, -12.3 + ((float)player2_score) * 0.5f, 7.5f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(0.1f));
+          if (player2_score == 10) {
+            game_over = true;
+            player2->transform.position.z = 5.0f;
+          }
+        }
+
+      } else {
+        ball->transform.position.y += ball_velocity.y * elapsed;
+        ball->transform.position.z += ball_velocity.z * elapsed;
+
+        bool player1_getting_point_prev = player1_getting_point;
+        player1_getting_point = ball->transform.position.y <= -1.7f;
+        if (player1_getting_point_prev != player1_getting_point) {
+          num_bounces = 0;
+        }
+      }
 		}
 
 		//draw output:
@@ -390,7 +534,6 @@ int main(int argc, char **argv) {
 			glUniform3fv(program_to_light, 1, glm::value_ptr(glm::normalize(glm::vec3(0.0f, 1.0f, 10.0f))));
 			scene.render();
 		}
-
 
 		SDL_GL_SwapWindow(window);
 	}
