@@ -82,7 +82,7 @@ int main(int argc, char **argv) {
 	}
 
 	//Hide mouse cursor (note: showing can be useful for debugging):
-	//SDL_ShowCursor(SDL_DISABLE);
+	SDL_ShowCursor(SDL_DISABLE);
 
 	//------------ opengl objects / game assets ------------
 
@@ -204,46 +204,48 @@ int main(int argc, char **argv) {
 		}
 	}
 
-  /*
-	//create a weird waving tree stack:
-	std::vector< Scene::Object * > tree_stack;
-	tree_stack.emplace_back( &add_object("Tree", glm::vec3(1.0f, 0.0f, 0.2f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(0.3f)) );
-	tree_stack.emplace_back( &add_object("Tree", glm::vec3(0.0f, 0.0f, 1.7f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(0.9f)) );
-	tree_stack.emplace_back( &add_object("Tree", glm::vec3(0.0f, 0.0f, 1.7f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(0.9f)) );
-	tree_stack.emplace_back( &add_object("Tree", glm::vec3(0.0f, 0.0f, 1.7f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(0.9f)) );
+	//create players and ball:
+  Scene::Object *player1 = &add_object("Cube", glm::vec3(0.0f, 3.0f, 0.6f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(0.6f));
+  Scene::Object *player2 = &add_object("Cube.001", glm::vec3(0.0f, -6.0f, 0.6f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(0.6f));
+  Scene::Object *ball = &add_object("Sphere", glm::vec3(0.0f, 3.0f, 4.0f), glm::quat(1.0f, 0.0f, 0.0f, 0.0f), glm::vec3(0.4f));
 
-	for (uint32_t i = 1; i < tree_stack.size(); ++i) {
-		tree_stack[i]->transform.set_parent(&tree_stack[i-1]->transform);
-	}
+  glm::vec3 player1_velocity = glm::vec3(0.0f, 0.0f, 0.0f);
+  glm::vec3 player2_velocity = glm::vec3(0.0f, 0.0f, 0.0f);
+  glm::vec3 ball_velocity = glm::vec3(0.0f, 3.0f, 0.0f);
 
-	std::vector< float > wave_acc(tree_stack.size(), 0.0f);
-*/
-	glm::vec2 mouse = glm::vec2(0.0f, 0.0f); //mouse position in [-1,1]x[-1,1] coordinates
-
+  //create camera
 	struct {
 		float radius = 15.0f;
 		float elevation = -6.0f;
 		float azimuth = 3.12f;
 		glm::vec3 target = glm::vec3(0.0f, -2.0f, 0.0f);
 	} camera;
+			
+  scene.camera.transform.position = camera.radius * glm::vec3(
+	std::cos(camera.elevation) * std::cos(camera.azimuth),
+	std::cos(camera.elevation) * std::sin(camera.azimuth),
+	std::sin(camera.elevation)) + camera.target;
+
+	glm::vec3 out = -glm::normalize(camera.target - scene.camera.transform.position);
+	glm::vec3 up = glm::vec3(0.0f, 0.0f, 1.0f);
+	up = glm::normalize(up - glm::dot(up, out) * out);
+	glm::vec3 right = glm::cross(up, out);
+	
+	scene.camera.transform.rotation = glm::quat_cast(
+		glm::mat3(right, up, out)
+	);
+	scene.camera.transform.scale = glm::vec3(1.0f, 1.0f, 1.0f);
 
 	//------------ game loop ------------
 
 	bool should_quit = false;
+  float ball_gravity = -2.0f;
+  float player_gravity = -1.5f;
 	while (true) {
 		static SDL_Event evt;
 		while (SDL_PollEvent(&evt) == 1) {
 			//handle input:
-			if (evt.type == SDL_MOUSEMOTION) {
-				glm::vec2 old_mouse = mouse;
-				mouse.x = (evt.motion.x + 0.5f) / float(config.size.x) * 2.0f - 1.0f;
-				mouse.y = (evt.motion.y + 0.5f) / float(config.size.y) *-2.0f + 1.0f;
-				if (evt.motion.state & SDL_BUTTON(SDL_BUTTON_LEFT)) {
-					camera.elevation += -2.0f * (mouse.y - old_mouse.y);
-					camera.azimuth += -2.0f * (mouse.x - old_mouse.x);
-				}
-			} else if (evt.type == SDL_MOUSEBUTTONDOWN) {
-			} else if (evt.type == SDL_KEYDOWN && evt.key.keysym.sym == SDLK_ESCAPE) {
+			if (evt.type == SDL_KEYDOWN && evt.key.keysym.sym == SDLK_ESCAPE) {
 				should_quit = true;
 			} else if (evt.type == SDL_QUIT) {
 				should_quit = true;
@@ -260,33 +262,119 @@ int main(int argc, char **argv) {
 
 		{ //update game state:
 
-      /*
-			//tree stack:
-			for (uint32_t i = 0; i < tree_stack.size(); ++i) {
-				wave_acc[i] += elapsed * (0.3f + 0.3f * i);
-				wave_acc[i] -= std::floor(wave_acc[i]);
-				float ang = (0.7f * float(M_PI)) * i;
-				tree_stack[i]->transform.rotation = glm::angleAxis(
-					std::cos(wave_acc[i] * 2.0f * float(M_PI)) * (0.2f + 0.1f * i),
-					glm::vec3(std::cos(ang), std::sin(ang), 0.0f)
-				);
-			}
-*/
-			//camera:
-			scene.camera.transform.position = camera.radius * glm::vec3(
-				std::cos(camera.elevation) * std::cos(camera.azimuth),
-				std::cos(camera.elevation) * std::sin(camera.azimuth),
-				std::sin(camera.elevation)) + camera.target;
+			//player1
+      if (player1->transform.position.z > 0.6f) {
+        player1_velocity.z += player_gravity * elapsed;
+      } else {
+        if (player1_velocity.z < 0.0f) {
+          player1_velocity.z *= -1.0f;
+        }
+      }
+      
+      player1->transform.position.y += player1_velocity.y * elapsed;
+      player1->transform.position.z += player1_velocity.z * elapsed;
+      
+			//player2
+      if (player2->transform.position.z > 0.6f) {
+        player2_velocity.z += player_gravity * elapsed;
+      } else {
+        if (player2_velocity.z < 0.0f) {
+          player2_velocity.z *= -1.0f;
+        }
+      }
+      
+      player2->transform.position.y += player2_velocity.y * elapsed;
+      player2->transform.position.z += player2_velocity.z * elapsed;
+      
+			//ball-wall collisions
+      if (ball->transform.position.z >= 0.4f) {
+        ball_velocity.z += ball_gravity * elapsed;
+      } else {
+        ball_velocity.z *= -1.0f;
+        ball->transform.position.z = 0.4f;
+      }
+     
+      if (ball->transform.position.y >= 8.1f) {
+        ball_velocity.y *= -1.0f;
+        ball->transform.position.y = 8.1f;
+      }
+      
+      if (ball->transform.position.y <= -11.4f) {
+        ball_velocity.y *= -1.0f;
+        ball->transform.position.y = -11.4f;
+      }
+      
+      //ball-player collisions
+      glm::vec3 center_difference1 = glm::vec3(
+        0.0f,
+        ball->transform.position.y - player1->transform.position.y,
+        ball->transform.position.z - player1->transform.position.z);
+      glm::vec3 center_difference2 = glm::vec3(
+        0.0f,
+        ball->transform.position.y - player2->transform.position.y,
+        ball->transform.position.z - player2->transform.position.z);
 
-			glm::vec3 out = -glm::normalize(camera.target - scene.camera.transform.position);
-			glm::vec3 up = glm::vec3(0.0f, 0.0f, 1.0f);
-			up = glm::normalize(up - glm::dot(up, out) * out);
-			glm::vec3 right = glm::cross(up, out);
-			
-			scene.camera.transform.rotation = glm::quat_cast(
-				glm::mat3(right, up, out)
-			);
-			scene.camera.transform.scale = glm::vec3(1.0f, 1.0f, 1.0f);
+      if (-1.0f < center_difference1.y && center_difference1.y < 1.0f &&
+          -1.0f < center_difference1.z && center_difference1.z < 1.0f) {
+        if (center_difference1.y <= 0.0f &&
+            center_difference1.z <= -center_difference1.y &&
+            center_difference1.z >= center_difference1.y) {
+          //right collision
+          ball_velocity.y *= -1.0f;
+          ball->transform.position.y = player1->transform.position.y - 1.0f;
+        } else if (center_difference1.y > 0.0f &&
+            center_difference1.z <= center_difference1.y &&
+            center_difference1.z >= -center_difference1.y) {
+          //left collision
+          ball_velocity.y *= -1.0f;
+          ball->transform.position.y = player1->transform.position.y + 1.0f;
+        } else if (center_difference1.z <= 0.0f &&
+            center_difference1.y <= -center_difference1.z &&
+            center_difference1.y >= center_difference1.z) {
+          //bottom collision
+          ball_velocity.z *= -1.0f;
+          ball->transform.position.z = player1->transform.position.z - 1.0f;
+        } else if (center_difference1.z > 0.0f &&
+            center_difference1.y <= center_difference1.z &&
+            center_difference1.y >= -center_difference1.z) {
+          //top collision
+          ball_velocity.z *= -1.0f;
+          ball->transform.position.z = player1->transform.position.z + 1.0f;
+        }
+      }
+        
+      if (-1.0f < center_difference2.y && center_difference2.y < 1.0f &&
+          -1.0f < center_difference2.z && center_difference2.z < 1.0f) {
+        if (center_difference2.y <= 0.0f &&
+            center_difference2.z <= -center_difference2.y &&
+            center_difference2.z >= center_difference2.y) {
+          //right collision
+          ball_velocity.y *= -1.0f;
+          ball->transform.position.y = player2->transform.position.y - 1.0f;
+        } else if (center_difference2.y > 0.0f &&
+            center_difference2.z <= center_difference2.y &&
+            center_difference2.z >= -center_difference2.y) {
+          //left collision
+          ball_velocity.y *= -1.0f;
+          ball->transform.position.y = player2->transform.position.y + 1.0f;
+        } else if (center_difference2.z <= 0.0f &&
+            center_difference2.y <= -center_difference2.z &&
+            center_difference2.y >= center_difference2.z) {
+          //bottom collision
+          ball_velocity.z *= -1.0f;
+          ball->transform.position.z = player2->transform.position.z - 1.0f;
+        } else if (center_difference2.z > 0.0f &&
+            center_difference2.y <= center_difference2.z &&
+            center_difference2.y >= -center_difference2.z) {
+          //top collision
+          ball_velocity.z *= -1.0f;
+          ball->transform.position.z = player2->transform.position.z + 1.0f;
+        }
+      }
+
+      ball->transform.position.y += ball_velocity.y * elapsed;
+      ball->transform.position.z += ball_velocity.z * elapsed;
+      
 		}
 
 		//draw output:
